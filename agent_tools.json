@@ -1,0 +1,19 @@
+ [
+    {
+        "type": "function",
+        "function": {
+            "name": "fetch_structure",
+            "description": "Get the current time in a given location",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "repo_url": {
+                        "type": "string",
+                        "description": "The repo url"
+                    }
+                },
+                "required": ["repo_url"]
+            }
+        }
+    }
+]
