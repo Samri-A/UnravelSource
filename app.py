@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import chromadb
 import uvicorn
 from pydantic import BaseModel
+from mail import GmailClient
 
 load_dotenv()
 client = chromadb.Client()
@@ -30,6 +31,7 @@ llm = ChatOpenAI(
     base_url="https://openrouter.ai/api/v1"
 )
 
+GmailClient().login(email= os.getenv('email') , password= os.getenv('password'))
 
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
@@ -128,51 +130,67 @@ tools = [
             "Input should be a natural language query about the repo, such as asking about specific "
             "functions, classes, or documentation. Returns the chunks of code or text that best match the query."
         )
+    ), 
+    Tool(
+    name="send_email",
+    func=GmailClient().send_email,
+    description=(
+        "Send an email notification to the user. "
+        "Use this tool only if the user explicitly asks to be notified by email "
+        "after documentation is generated or a task is completed. "
+        "Before calling, ask the user to provide their email address. "
+        "Input format: a dictionary with 'to', 'subject', and 'body'."
     )
+   )
 ]
 
 
 memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
 template = """You are GitHub Explainer, a versatile AI agent that generates developer-style documentation and interacts with any GitHub repository.
 
-Your role:
-- Act as a technical writer, repository mentor, and code analyst.
-- Use available tools to fetch, read, and analyze repository files dynamically.
-- Produce structured, detailed documentation and answer code-related questions.
-
-Capabilities:
-1. Repository Analysis
-   - When a new GitHub URL is provided, first fetch the repository using the `fetch_repo` tool.
-   - Then use the `get_repo_content` tool to retrieve README.md, Python files, notebooks, or other relevant files.
-   - Understand key components including modules, classes, functions, and APIs.
-
-2. Documentation Generation
-   - Generate developer-style documentation, not just README summaries.
-   - Include:
-     * Overview (from README if available)
-     * Project structure
-     * Modules, classes, and methods
-     * Functions / APIs with signature, arguments, return values, and description
-     * Usage examples (from code or README)
-     * Installation instructions
-     * Testing instructions
-     * Contribution guidelines
-     * License information
-   - Always ground documentation in actual repository content.
-
-3. Conversational Q&A
-   - Allow the user to "chat with the repo".
-   - Retrieve relevant files or sections using `get_repo_content`.
-   - Summarize, explain, or refactor code as needed.
-
-Behavior:
-- Use Markdown formatting with headings, code blocks, tables, or lists where helpful.
-- If information is missing, infer carefully and clearly state assumptions.
-- Always fetch the repo first, then query content using `get_repo_content` for any analysis or task.
-
-Repo URL: {input}
-Task: {task}
-"""
+           Your role:
+           - Act as a technical writer, repository mentor, and code analyst.
+           - Use available tools to fetch, read, and analyze repository files dynamically.
+           - Produce structured, detailed documentation and answer code-related questions.
+           
+           Capabilities:
+           1. Repository Analysis
+              - When a new GitHub URL is provided, first fetch the repository using the `fetch_repo` tool.
+              - Then use the `get_repo_content` tool to retrieve README.md, Python files, notebooks, or other relevant files.
+              - Understand key components including modules, classes, functions, and APIs.
+           
+           2. Documentation Generation
+              - Generate developer-style documentation, not just README summaries.
+              - Include:
+                * Overview (from README if available)
+                * Project structure
+                * Modules, classes, and methods
+                * Functions / APIs with signature, arguments, return values, and description
+                * Usage examples (from code or README)
+                * Installation instructions
+                * Testing instructions
+                * Contribution guidelines
+                * License information
+              - Always ground documentation in actual repository content.
+           
+           3. Conversational Q&A
+              - Allow the user to "chat with the repo".
+              - Retrieve relevant files or sections using `get_repo_content`.
+              - Summarize, explain, or refactor code as needed.
+           
+           Behavior:
+           - Use Markdown formatting with headings, code blocks, tables, or lists where helpful.
+           - If information is missing, infer carefully and clearly state assumptions.
+           - Always fetch the repo first, then query content using `get_repo_content` for any analysis or task.
+           - Only use the `send_email` tool if the user explicitly asks to be notified via email. 
+             In that case:
+             1. Ask the user to provide their email address.
+             2. Call `send_email` with: {"to": user_email, "subject": "Your documentation is ready", "body": documentation_or_message}.
+           - Do not send emails unless the user explicitly requests notification.
+          
+          Repo URL: {input}
+          Task: {task}
+          """
 
 prompt = PromptTemplate(input_variables=["input"], template=template)
 

@@ -1,3 +1,7 @@
 dotenv
+chromadb
 langchain
 langchain-openai
+sentence_transformers
+langchain_text_splitters
+streamlit
