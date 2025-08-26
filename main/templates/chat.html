@@ -1,38 +1,74 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>chat</title>
-    <link rel="stylesheet" href="{% static 'css/chat.css' %}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Explainer Chat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-	<div class="container">
-      <div class="nav-bar">
-      	<a>Chat</a>
-        <div class="close">
-         	<div class="line one"></div>
-         	<div class="line two"></div>
+<body class="bg-gray-100 flex flex-col h-screen">
+
+  <!-- Header -->
+  <header class="bg-blue-600 text-white p-4 text-center font-bold text-lg">
+    💬 GitHub Explainer
+  </header>
+
+  <!-- Chat Window -->
+  <main id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-4">
+    
+    {% if response %}
+    <!-- Bot message -->
+    <div class="flex justify-start">
+      <div class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg max-w-xl whitespace-pre-wrap">
+        {{ response|safe }}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if messages %}
+      {% for message in messages %}
+        {% if message.role == "user" %}
+        <div class="flex justify-end">
+          <div class="bg-blue-600 text-white px-4 py-2 rounded-lg max-w-xl whitespace-pre-wrap">
+            {{ message.content }}
+          </div>
         </div>
-      </div>
-      <div class="messages-area">
-        
-        <div class="message one"></div>
-        <div class="message two"></div>
-        <div class="message three"></div>
-        <div class="message four"></div>
-        <div class="message five"></div>
-        <div class="message six"></div>
-      </div>
-      <div class="sender-area">
-        <div class="input-place">
-        	<input placeholder="Send a message." class="send-input" type="text">
-            <div class="send">
-				<svg class="send-icon" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;" xml:space="preserve"><g><g><path fill="#6B6C7B" d="M481.508,210.336L68.414,38.926c-17.403-7.222-37.064-4.045-51.309,8.287C2.86,59.547-3.098,78.551,1.558,96.808 L38.327,241h180.026c8.284,0,15.001,6.716,15.001,15.001c0,8.284-6.716,15.001-15.001,15.001H38.327L1.558,415.193 c-4.656,18.258,1.301,37.262,15.547,49.595c14.274,12.357,33.937,15.495,51.31,8.287l413.094-171.409 C500.317,293.862,512,276.364,512,256.001C512,235.638,500.317,218.139,481.508,210.336z"></path></g></g></svg>
-        	</div>
-      	</div>
-      </div>
-    <div></div></div>
+        {% else %}
+        <div class="flex justify-start">
+          <div class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg max-w-xl whitespace-pre-wrap">
+            {{ message.content|safe }}
+          </div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    
+  </main>
+
+  <!-- Input Form -->
+  <form method="POST" action="{% url 'explain_repo' %}" 
+        class="p-4 bg-white border-t flex items-center space-x-2">
+    {% csrf_token %}
+    <input 
+      type="text" 
+      name="repoLink" 
+      placeholder="Ask about your repo..." 
+      class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      required
+    />
+    <button 
+      type="submit" 
+      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+    >
+      Send
+    </button>
+  </form>
+
+  <script>
+    // Keep chat scrolled to bottom
+    const chatBox = document.getElementById("chat-box");
+    chatBox.scrollTop = chatBox.scrollHeight;
+  </script>
+
 </body>
 </html>
