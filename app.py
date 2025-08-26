@@ -1,4 +1,4 @@
-from flask import Flask
+from fastapi import FastAPI
 import requests
 import zipfile
 import io
@@ -12,10 +12,15 @@ from sentence_transformers import SentenceTransformer
 import os
 from dotenv import load_dotenv
 import chromadb
+import uvicorn
+from pydantic import BaseModel
 
 load_dotenv()
 client = chromadb.Client()
-collection = client.create_collection(name="git_repo_data")
+try:
+    collection = client.create_collection(name="git_repo_data")
+except:
+    collection = client.get_collection(name="git_repo_data")
 
 
 llm = ChatOpenAI(
@@ -27,6 +32,12 @@ llm = ChatOpenAI(
 
 
 model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+app = FastAPI(debug=True)
+
+class data(BaseModel):
+    prompt:str
+
 def preprocess_document(data , file_path): 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=256,
@@ -176,10 +187,12 @@ repo_agent = initialize_agent(
 )
 
 
-if __name__ == "__main__":
-    response = repo_agent.run(
-    "https://github.com/Samri-A/first-contributions prepare me a documentation"
-    )
+@app.post('/chat')
+def ai_agent_chat(data: data):
+    response = repo_agent.run(data.prompt)
+    return {"Response" : response}
 
-    print(response)
+if __name__ == "__main__":
+    uvicorn.run("app:app",  port=8000, reload=True)
+    
     
